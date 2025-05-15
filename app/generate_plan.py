@@ -4,7 +4,7 @@ from reportlab.pdfgen import canvas
 import os
 import matplotlib.pyplot as plt
 from ezdxf.addons.drawing import RenderContext, Frontend
-from ezdxf.addons.drawing.matplotlib import Backend
+from ezdxf.addons.drawing.matplotlib import MatplotlibBackend
 
 def generate_structural_plan(structure, dimensions, ferraillage, output_path):
     dxf_path = output_path.replace('.pdf', '.dxf')
@@ -26,11 +26,11 @@ def generate_structural_plan(structure, dimensions, ferraillage, output_path):
 
     doc.saveas(dxf_path)
 
-    # ✅ Conversion DXF → PNG avec Frontend
+    # ✅ Conversion DXF → PNG avec le bon backend
     fig = plt.figure()
     ax = fig.add_axes([0, 0, 1, 1])
     ctx = RenderContext(doc)
-    backend = Backend(ax)
+    backend = MatplotlibBackend(ax)
     Frontend(ctx, backend).draw_layout(msp, finalize=True)
     plt.axis("off")
 
@@ -59,3 +59,5 @@ def generate_structural_plan(structure, dimensions, ferraillage, output_path):
     c.drawImage(png_path, x=300, y=500, width=200, preserveAspectRatio=True, mask='auto')
     
     c.save()
+
+
