@@ -53,4 +53,5 @@ def generate_structural_plan(structure, dimensions, ferraillage, output_path):
     c.setFont("Helvetica-Oblique", 8)
     c.drawString(50, 40, "Document généré automatiquement – Do not scale / Ne pas modifier")
     c.drawImage(png_path, x=300, y=500, width=200, preserveAspectRatio=True, mask='auto')
+    
     c.save()
