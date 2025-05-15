@@ -3,6 +3,7 @@ from fastapi.responses import FileResponse
 from app.generate_plan import generate_structural_plan
 import uuid
 import os
+import glob
 
 app = FastAPI()
 
