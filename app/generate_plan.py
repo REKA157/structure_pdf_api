@@ -2,6 +2,8 @@ import ezdxf
 from reportlab.lib.pagesizes import A4
 from reportlab.pdfgen import canvas
 import os
+import matplotlib.pyplot as plt
+from ezdxf.addons.drawing import matplotlib as draw_mpl
 
 def generate_structural_plan(structure, dimensions, ferraillage, output_path):
     dxf_path = output_path.replace('.pdf', '.dxf')
