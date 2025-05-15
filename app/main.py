@@ -15,18 +15,24 @@ async def generate_pdf(request: Request):
     ferraillage = data.get("ferraillage", {})
 
     file_id = uuid.uuid4().hex
-    output_path = f"app/output/plan_{structure}_{file_id}.pdf"
+    pdf_path = f"app/output/plan_{structure}_{file_id}.pdf"
+    dxf_path = pdf_path.replace(".pdf", ".dxf")
 
-    generate_structural_plan(structure, dimensions, ferraillage, output_path)
-    return FileResponse(output_path, media_type="application/pdf", filename=os.path.basename(output_path))
+    generate_structural_plan(structure, dimensions, ferraillage, pdf_path)
 
-@app.get("/download-dxf")
-async def download_last_dxf():
-    try:
-        files = sorted(glob.glob("app/output/*.dxf"), key=os.path.getmtime, reverse=True)
-        if not files:
-            return {"error": "Aucun fichier DXF trouvé."}
-        latest_dxf = files[0]
-        return FileResponse(latest_dxf, media_type="application/dxf", filename=os.path.basename(latest_dxf))
-    except Exception as e:
-        return {"error": str(e)}
+    # Lien simulé du dxf
+    dxf_filename = os.path.basename(dxf_path)
+    dxf_download_url = f"/download-dxf/{dxf_filename}"
+
+    return {
+        "message": "PDF généré avec succès",
+        "pdf": f"/generate-pdf (téléchargement automatique)",
+        "dxf_download_link": dxf_download_url
+    }
+
+@app.get("/download-dxf/{filename}")
+async def download_dxf_file(filename: str):
+    filepath = os.path.join("app/output", filename)
+    if not os.path.exists(filepath):
+        return {"error": "Fichier introuvable"}
+    return FileResponse(filepath, media_type="application/dxf", filename=filename)
