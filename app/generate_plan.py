@@ -3,7 +3,8 @@ from reportlab.lib.pagesizes import A4
 from reportlab.pdfgen import canvas
 import os
 import matplotlib.pyplot as plt
-from ezdxf.addons.drawing import matplotlib as draw_mpl
+from ezdxf.addons.drawing import RenderContext, Frontend
+from ezdxf.addons.drawing.matplotlib import Backend
 
 def generate_structural_plan(structure, dimensions, ferraillage, output_path):
     dxf_path = output_path.replace('.pdf', '.dxf')
@@ -24,17 +25,20 @@ def generate_structural_plan(structure, dimensions, ferraillage, output_path):
         msp.add_text("Coupe A-A / Section", dxfattribs={"insert": (0, H + 30)})
 
     doc.saveas(dxf_path)
-    # Conversion DXF vers image PNG
+
+    # ✅ Conversion DXF → PNG avec Frontend
     fig = plt.figure()
     ax = fig.add_axes([0, 0, 1, 1])
-    draw_mpl.draw_layout(doc.modelspace(), ax)
+    ctx = RenderContext(doc)
+    backend = Backend(ax)
+    Frontend(ctx, backend).draw_layout(msp, finalize=True)
     plt.axis("off")
 
     png_path = output_path.replace(".pdf", ".png")
     plt.savefig(png_path, dpi=300)
     plt.close(fig)
 
-    # Génération du PDF résumé
+    # ✅ Génération du PDF avec image + texte
     c = canvas.Canvas(output_path, pagesize=A4)
     c.setFont("Helvetica-Bold", 16)
     c.drawString(50, 800, f"Plan de ferraillage – {structure.upper()}")
