@@ -7,67 +7,51 @@ def generate_structural_plan(structure, dimensions, ferraillage, output_path):
     msp = doc.modelspace()
 
     if structure == "poutre":
-        L = dimensions.get("longueur", 5000) / 10
-        H = dimensions.get("hauteur", 500) / 10
-        B = dimensions.get("largeur", 300) / 10
-        nb_etr = int(L // 20)
+        L = dimensions.get("longueur", 5000)  # mm
+        H = dimensions.get("hauteur", 500)
+        B = dimensions.get("largeur", 300)
+        nb_etr = max(3, int(L // 500))  # étriers tous les 500 mm
 
-        # === VUE EN COUPE TRANSVERSALE ===
-        origin_x, origin_y = 0, 0
-        msp.add_lwpolyline([(origin_x, origin_y),
-                            (origin_x + B, origin_y),
-                            (origin_x + B, origin_y + H),
-                            (origin_x, origin_y + H)],
-                           close=True)
+        # Centrage
+        cx, cy = 0, 0
+        x0 = cx - B // 2
+        y0 = cy - H // 2
 
-        # Étrier
-        cadre_offset = 1
-        msp.add_lwpolyline([(origin_x + cadre_offset, origin_y + cadre_offset),
-                            (origin_x + B - cadre_offset, origin_y + cadre_offset),
-                            (origin_x + B - cadre_offset, origin_y + H - cadre_offset),
-                            (origin_x + cadre_offset, origin_y + H - cadre_offset)],
-                           close=True)
+        # Coupe transversale
+        msp.add_lwpolyline([(x0, y0), (x0 + B, y0), (x0 + B, y0 + H), (x0, y0 + H)], close=True)
 
-        # Aciers dans les coins
-        msp.add_circle((origin_x + 5, origin_y + 5), 1)
-        msp.add_circle((origin_x + B - 5, origin_y + 5), 1)
-        msp.add_circle((origin_x + 5, origin_y + H - 5), 1)
-        msp.add_circle((origin_x + B - 5, origin_y + H - 5), 1)
+        # Étrier intérieur
+        msp.add_lwpolyline([(x0 + 10, y0 + 10), (x0 + B - 10, y0 + 10),
+                            (x0 + B - 10, y0 + H - 10), (x0 + 10, y0 + H - 10)], close=True)
 
-        msp.add_text("Coupe A-A", dxfattribs={"insert": (origin_x, origin_y + H + 5)})
+        # Aciers coin
+        r = 5
+        msp.add_circle((x0 + 10, y0 + 10), r)
+        msp.add_circle((x0 + B - 10, y0 + 10), r)
+        msp.add_circle((x0 + 10, y0 + H - 10), r)
+        msp.add_circle((x0 + B - 10, y0 + H - 10), r)
 
-        # === VUE EN COUPE LONGITUDINALE ===
-        base_x = 100
-        base_y = 0
-        msp.add_lwpolyline([(base_x, base_y),
-                            (base_x + L, base_y),
-                            (base_x + L, base_y + H),
-                            (base_x, base_y + H)],
-                           close=True)
+        # Coupe longitudinale
+        dx = 600
+        ly = y0
+        msp.add_lwpolyline([(dx, ly), (dx + L, ly), (dx + L, ly + H), (dx, ly + H)], close=True)
 
         # Appuis
-        msp.add_line((base_x, base_y), (base_x, base_y - 5))
-        msp.add_line((base_x + L, base_y), (base_x + L, base_y - 5))
+        msp.add_line((dx, ly), (dx, ly - 20))
+        msp.add_line((dx + L, ly), (dx + L, ly - 20))
 
         # Aciers longitudinaux
-        msp.add_line((base_x + 5, base_y + 5), (base_x + L - 5, base_y + 5))
-        msp.add_line((base_x + 5, base_y + H - 5), (base_x + L - 5, base_y + H - 5))
+        msp.add_line((dx + 10, ly + 10), (dx + L - 10, ly + 10))
+        msp.add_line((dx + 10, ly + H - 10), (dx + L - 10, ly + H - 10))
 
         # Étriers
         for i in range(nb_etr):
-            x = base_x + 5 + i * ((L - 10) / nb_etr)
-            msp.add_lwpolyline([(x, base_y + 2),
-                                (x + 1, base_y + 2),
-                                (x + 1, base_y + H - 2),
-                                (x, base_y + H - 2)],
-                               close=True)
-
-        # Cotes
-        msp.add_text(f"L = {int(L * 10)} mm", dxfattribs={"insert": (base_x + L / 3, base_y - 10)})
-        msp.add_text(f"H = {int(H * 10)} mm", dxfattribs={"insert": (base_x - 20, base_y + H / 2)})
+            x = dx + 10 + i * ((L - 20) / nb_etr)
+            msp.add_lwpolyline([(x, ly + 5), (x + 5, ly + 5),
+                                (x + 5, ly + H - 5), (x, ly + H - 5)], close=True)
 
         # Titre
-        msp.add_text("Ferraillage d’une poutre sur appuis simples",
-                     dxfattribs={"insert": (base_x, base_y + H + 10)})
+        msp.add_text("Ferraillage d’une poutre avec appuis simples",
+                     dxfattribs={"insert": (dx, ly + H + 40)})
 
     doc.saveas(dxf_path)
