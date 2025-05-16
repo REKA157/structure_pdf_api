@@ -7,96 +7,83 @@ def generate_structural_plan(structure, dimensions, ferraillage, output_path):
     msp = doc.modelspace()
 
     if structure == "poutre":
-        L = dimensions.get("longueur", 3400)
-        H = dimensions.get("hauteur", 500)
-        B = dimensions.get("largeur", 250)
+        L = dimensions.get("longueur", 5000)
+        H = dimensions.get("hauteur", 250)
+        B = dimensions.get("largeur", 400)
+        ha_type = ferraillage.get("ha", "HA12")
+        nb_barres = ferraillage.get("nb_barres", 2)
+        etrs = ferraillage.get("etrs", "8@20")
 
-        dx = 0
-        dy = 0
-        h_appui = 20
-        text_height = 40
+        dx, dy = 100, 200
+        text_height = 25
 
-        # Poutre principale
+        # === VUE LONGITUDINALE ===
         msp.add_lwpolyline([(dx, dy), (dx + L, dy), (dx + L, dy + H), (dx, dy + H)], close=True)
 
-        # Appuis
-        msp.add_line((dx, dy), (dx, dy - h_appui))
-        msp.add_line((dx + L, dy), (dx + L, dy - h_appui))
-
-        # Zones d'étriers
-        zone1_start = dx
-        zone1_end = dx + 1400
-        for i in range(14):
-            x = zone1_start + i * 100
-            msp.add_lwpolyline([(x, dy + 5), (x + 5, dy + 5), (x + 5, dy + H - 5), (x, dy + H - 5)], close=True)
-
-        zone2_start = zone1_end
-        zone2_end = zone2_start + 600
-        for i in range(4):
-            x = zone2_start + i * 150
-            msp.add_lwpolyline([(x, dy + 5), (x + 5, dy + 5), (x + 5, dy + H - 5), (x, dy + H - 5)], close=True)
-
-        zone3_start = zone2_end
-        for i in range(14):
-            x = zone3_start + i * 100
-            msp.add_lwpolyline([(x, dy + 5), (x + 5, dy + 5), (x + 5, dy + H - 5), (x, dy + H - 5)], close=True)
+        # Appuis + texte
+        msp.add_line((dx, dy), (dx, dy - 20))
+        msp.add_line((dx + L, dy), (dx + L, dy - 20))
+        msp.add_text("Appui 20 cm", dxfattribs={"insert": (dx - 50, dy - 40), "height": text_height})
+        msp.add_text("Appui 20 cm", dxfattribs={"insert": (dx + L - 50, dy - 40), "height": text_height})
 
         # Aciers longitudinaux
-        msp.add_line((dx + 10, dy + 10), (dx + L - 10, dy + 10))
-        msp.add_line((dx + 10, dy + H - 10), (dx + L - 10, dy + H - 10))
+        msp.add_line((dx + 20, dy + 20), (dx + L - 20, dy + 20))  # bas
+        msp.add_line((dx + 20, dy + H - 20), (dx + L - 20, dy + H - 20))  # haut
 
-        # Repères
-        msp.add_circle((zone1_start + 700, dy + H + 50), 20)
-        msp.add_text("1", dxfattribs={"insert": (zone1_start + 693, dy + H + 40), "height": 25})
-        msp.add_circle((zone2_start + 300, dy + H + 50), 20)
-        msp.add_text("2", dxfattribs={"insert": (zone2_start + 293, dy + H + 40), "height": 25})
-        msp.add_circle((zone3_start + 700, dy + H + 50), 20)
-        msp.add_text("3", dxfattribs={"insert": (zone3_start + 693, dy + H + 40), "height": 25})
+        msp.add_line((dx + L / 2, dy + H), (dx + L / 2, dy + H + 50))
+        msp.add_text(f"{nb_barres} {ha_type}", dxfattribs={"insert": (dx + L / 2 + 10, dy + H + 50), "height": text_height})
 
-        # Légende
-        legend_x = dx + L + 400
-        legend_y = dy + H + 100
-        msp.add_text("LÉGENDE : ", dxfattribs={"insert": (legend_x, legend_y), "height": 25})
-        msp.add_text("(1) : 2HA6  l = 3.470  e = 0.080", dxfattribs={"insert": (legend_x, legend_y - 40), "height": 20})
-        msp.add_text("(2) : 33DX6 l = 0.900  e = 0.150", dxfattribs={"insert": (legend_x, legend_y - 70), "height": 20})
-        msp.add_text("(3) : 2HA6  l = 3.470  e = 0.080", dxfattribs={"insert": (legend_x, legend_y - 100), "height": 20})
+        # Étriers espacés
+        nb_etr = int(L / 200)
+        spacing = L / nb_etr
+        for i in range(nb_etr):
+            x = dx + i * spacing
+            msp.add_lwpolyline([(x, dy + 5), (x + 2, dy + 5), (x + 2, dy + H - 5), (x, dy + H - 5)], close=True)
 
-        # Cotations texte manuelles
-        msp.add_text("14 × 0.10", dxfattribs={"insert": (zone1_start + 500, dy - 60), "height": text_height})
-        msp.add_text("4 × 0.15", dxfattribs={"insert": (zone2_start + 250, dy - 60), "height": text_height})
-        msp.add_text("14 × 0.10", dxfattribs={"insert": (zone3_start + 500, dy - 60), "height": text_height})
+        # Flèche horizontale + texte étriers
+        fx = dx + 300
+        fy = dy + H / 2
+        msp.add_line((fx, fy), (fx + 100, fy))
+        msp.add_text(f"{etrs}", dxfattribs={"insert": (fx + 110, fy + 10), "height": text_height})
 
-        # Ajout de vraies cotations linéaires
-        doc.dimstyles.new("MyDimStyle", dxfattribs={"dimtxsty": "Standard", "dimscale": 1})
+        # Repère (1)
+        rx1 = dx + 800
+        msp.add_line((rx1, dy + H), (rx1, dy + H + 50))
+        msp.add_circle((rx1, dy + H + 70), 10)
+        msp.add_text("1", dxfattribs={"insert": (rx1 - 5, dy + H + 62), "height": 15})
 
-        msp.add_linear_dim(base=(dx, dy - 150),
-                           p1=(zone1_start, dy),
-                           p2=(zone1_end, dy),
-                           override={"dimstyle": "MyDimStyle"}).render()
-        msp.add_linear_dim(base=(dx, dy - 180),
-                           p1=(zone2_start, dy),
-                           p2=(zone2_end, dy),
-                           override={"dimstyle": "MyDimStyle"}).render()
-        msp.add_linear_dim(base=(dx, dy - 210),
-                           p1=(zone3_start, dy),
-                           p2=(zone3_start + 1400, dy),
-                           override={"dimstyle": "MyDimStyle"}).render()
+        # Repère (2)
+        rx2 = dx + 1200
+        msp.add_line((rx2, dy + H / 2), (rx2 + 80, dy + H / 2))
+        msp.add_circle((rx2 + 100, dy + H / 2), 10)
+        msp.add_text("2", dxfattribs={"insert": (rx2 + 95, dy + H / 2 - 5), "height": 15})
 
-        # Titre
-        msp.add_text("Ferraillage d’une poutre avec cotations réelles", dxfattribs={"insert": (dx, dy + H + 150), "height": 30})
-
-        # Vue en coupe
-        cx = dx + L + 200
-        cy = dy
+        # === VUE EN COUPE TRANSVERSALE ===
+        cx = dx
+        cy = dy + H + 300
+        cover = 25
         msp.add_lwpolyline([(cx, cy), (cx + B, cy), (cx + B, cy + H), (cx, cy + H)], close=True)
 
+        # Aciers d’angle avec annotation
         r = 5
-        margin = 15
-        msp.add_circle((cx + margin, cy + margin), r)
-        msp.add_circle((cx + B - margin, cy + margin), r)
-        msp.add_circle((cx + margin, cy + H - margin), r)
-        msp.add_circle((cx + B - margin, cy + H - margin), r)
+        msp.add_circle((cx + cover, cy + cover), r)
+        msp.add_line((cx + cover, cy + cover), (cx + cover - 30, cy + cover - 30))
+        msp.add_text(f"{nb_barres} {ha_type}", dxfattribs={"insert": (cx + cover - 70, cy + cover - 30), "height": 20})
 
-        msp.add_text("Coupe transversale", dxfattribs={"insert": (cx, cy + H + 50), "height": 25})
+        msp.add_circle((cx + B - cover, cy + cover), r)
+        msp.add_circle((cx + cover, cy + H - cover), r)
+        msp.add_circle((cx + B - cover, cy + H - cover), r)
+
+        msp.add_line((cx + B - 20, cy + H - 20), (cx + B + 30, cy + H + 30))
+        msp.add_text("Cadres HA6", dxfattribs={"insert": (cx + B + 40, cy + H + 30), "height": 20})
+
+        msp.add_text("Section I-I", dxfattribs={"insert": (cx, cy - 50), "height": 20})
+
+        # Tableau annotations
+        lx = dx + L + 400
+        ly = dy + H + 100
+        msp.add_text("LÉGENDE : ", dxfattribs={"insert": (lx, ly), "height": 25})
+        msp.add_text(f"Longitudinal : {nb_barres} {ha_type}", dxfattribs={"insert": (lx, ly - 40), "height": 20})
+        msp.add_text(f"Etriers : {etrs}", dxfattribs={"insert": (lx, ly - 70), "height": 20})
 
     doc.saveas(dxf_path)
